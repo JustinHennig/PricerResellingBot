@@ -49,6 +49,11 @@ class EbayFindingClient:
         self._session = requests.Session()
         self._session.headers.update(self._HEADERS)
         self._cutoff = datetime.now(timezone.utc) - timedelta(days=HISTORY_DAYS)
+        try:
+            self._session.get("https://www.ebay.de", timeout=15)
+            time.sleep(2)
+        except requests.RequestException:
+            pass
 
     # ── Public ────────────────────────────────────────────────────────────────
 
