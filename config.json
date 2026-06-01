@@ -25,7 +25,11 @@
       "iPhone 16",
       "iPhone 16 Plus",
       "iPhone 16 Pro",
-      "iPhone 16 Pro Max"
+      "iPhone 16 Pro Max",
+      "iPhone 17e",
+      "iPhone 17",
+      "iPhone 17 Pro",
+      "iPhone 17 Pro Max"
     ],
     "Samsung": [
       "Samsung Galaxy S21 FE",
@@ -43,6 +47,7 @@
       "Samsung Galaxy S24",
       "Samsung Galaxy S24+",
       "Samsung Galaxy S24 Ultra",
+      "Samsung Galaxy S25 FE",
       "Samsung Galaxy S25",
       "Samsung Galaxy S25+",
       "Samsung Galaxy S25 Ultra",
@@ -59,7 +64,11 @@
       "Google Pixel 9",
       "Google Pixel 9 Pro",
       "Google Pixel 9 Pro XL",
-      "Google Pixel 9a"
+      "Google Pixel 9a",
+      "Google Pixel 10",
+      "Google Pixel 10 Pro",
+      "Google Pixel 10 Pro XL",
+      "Google Pixel 10a"
     ]
   }
 }
