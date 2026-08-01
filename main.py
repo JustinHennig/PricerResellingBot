@@ -8,6 +8,7 @@
 
 import sys
 import time
+import random
 import logging
 
 import json
@@ -16,7 +17,9 @@ from pathlib import Path
 import schedule as sched
 
 from database.alchemy.database import init_db, get_or_create_model, save_listings, update_price_summary, get_latest_summary
-from bot.ebay_client import EbayFindingClient
+from bot.ebay_client import EbayFindingClient, EbayBlockedError
+
+MODEL_DELAY = 4  # seconds between models, plus jitter, to avoid a bot-like request burst
 
 _cfg         = json.loads((Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
 PHONE_MODELS  = _cfg["phone_models"]
@@ -38,8 +41,11 @@ def cmd_fetch() -> None:
     init_db()
     client    = EbayFindingClient()
     total_new = 0
+    blocked   = False
 
     for brand, models in PHONE_MODELS.items():
+        if blocked:
+            break
         for model in models:
             logger.info("Fetching: %s", model)
             # Build the eBay model-aspect filter value:
@@ -64,8 +70,19 @@ def cmd_fetch() -> None:
                 else:
                     logger.info("  %-40s  no data yet", model)
 
+            except EbayBlockedError as exc:
+                logger.error(
+                    "eBay blocked this session (%s). Stopping the run instead of "
+                    "hammering the remaining models — wait a while before retrying.",
+                    exc,
+                )
+                blocked = True
+                break
+
             except Exception as exc:
                 logger.error("  Failed for %s: %s", model, exc)
+
+            time.sleep(MODEL_DELAY + random.uniform(0, 2))
 
     logger.info("Done. %d new listings saved to the database.", total_new)
 

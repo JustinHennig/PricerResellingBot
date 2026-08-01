@@ -1,4 +1,5 @@
 import time
+import random
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -23,6 +24,10 @@ _DE_MONTHS: dict[str, int] = {
     "jun": 6, "jul": 7, "aug": 8, "sep": 9, "okt": 10, "oct": 10,
     "nov": 11, "dez": 12, "dec": 12,
 }
+
+
+class EbayBlockedError(RuntimeError):
+    """Raised when eBay redirects us to the sign-in wall — the session/IP is bot-flagged."""
 
 
 class EbayFindingClient:
@@ -67,7 +72,7 @@ class EbayFindingClient:
             logger.debug("  page %d → %d items (total %d)", page, len(items), len(all_items))
             if not has_more:
                 break
-            time.sleep(self.REQUEST_DELAY)
+            time.sleep(self.REQUEST_DELAY + random.uniform(0, 1.5))
 
         return all_items
 
@@ -90,7 +95,14 @@ class EbayFindingClient:
 
         try:
             resp = self._session.get(EBAY_BASE_URL, params=params, timeout=30)
+            if "signin.ebay" in resp.url:
+                raise EbayBlockedError(
+                    f"eBay redirected '{keyword}' page {page} to the sign-in wall — "
+                    "session/IP is bot-flagged"
+                )
             resp.raise_for_status()
+        except EbayBlockedError:
+            raise
         except requests.RequestException as exc:
             logger.error("eBay request failed for '%s' page %d: %s", keyword, page, exc)
             return [], False
