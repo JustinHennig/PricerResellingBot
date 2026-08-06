@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import quote
 
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 import json
@@ -40,24 +40,22 @@ class EbayFindingClient:
     MAX_PAGES      = 8
     REQUEST_DELAY  = 2.5   # seconds between pages (be polite, avoid blocks)
 
+    # curl_cffi's impersonation already sends a full, internally-consistent
+    # Chrome header set (User-Agent, sec-ch-ua, sec-fetch-*, Accept-Encoding, …)
+    # matching its TLS fingerprint — overriding those here would create a
+    # mismatch that's itself a bot signal. Only the locale needs adjusting.
     _HEADERS = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
         "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
 
     def __init__(self) -> None:
-        self._session = requests.Session()
+        self._session = requests.Session(impersonate="chrome124")
         self._session.headers.update(self._HEADERS)
         self._cutoff = datetime.now(timezone.utc) - timedelta(days=HISTORY_DAYS)
         try:
             self._session.get("https://www.ebay.de", timeout=15)
             time.sleep(2)
-        except requests.RequestException:
+        except requests.exceptions.RequestException:
             pass
 
     # ── Public ────────────────────────────────────────────────────────────────
@@ -103,7 +101,7 @@ class EbayFindingClient:
             resp.raise_for_status()
         except EbayBlockedError:
             raise
-        except requests.RequestException as exc:
+        except requests.exceptions.RequestException as exc:
             logger.error("eBay request failed for '%s' page %d: %s", keyword, page, exc)
             return [], False
 
